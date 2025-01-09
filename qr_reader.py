@@ -13,6 +13,9 @@ if not os.path.exists(csv_file):
         writer = csv.writer(file)
         writer.writerow(['Identifier', 'Model Number', 'Trimmed Model Number', 'Destination Code', 'Serial Number'])
 
+# Set to store already scanned QR codes
+processed_qr_codes = set()
+
 # Initialize webcam
 cap = cv2.VideoCapture(0)
 
@@ -31,29 +34,31 @@ while True:
     # Loop through all detected codes
     for code in codes:
         if code.type == 'QRCODE':  # Check if it's a QR code
-            # Draw a rectangle around the QR code
-            points = code.polygon
-            if len(points) == 4:
-                pts = np.array(points, dtype=np.int32)
-                pts = pts.reshape((-1, 1, 2))
-                cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
-
             # Decode QR code data
-            qr_data = code.data.decode('utf-8')
+            qr_data = code.data.decode('utf-8').strip()
+
+            # Skip if the QR code has already been processed
+            if qr_data in processed_qr_codes:
+                continue
+
+            # Add the QR code to the processed set
+            processed_qr_codes.add(qr_data)
+
             print(f"QR Code Detected: {qr_data}")
 
             # Split the QR code data into fields
-            fields = qr_data.split('|')
-            if len(fields) == 4:
-                identifier = fields[0]
-                model_number = fields[1]
-                destination_code = fields[2]
-                serial_number = fields[3]
+            fields = qr_data.split(',')
+            if len(fields) >= 5:
+                identifier = fields[0].strip()
+                model_number = fields[1].strip()
+                destination_code = fields[2].strip()
+                some_code = fields[3].strip()
+                serial_number = fields[4].strip()
 
                 # Trim the model number to the first 7 characters
                 trimmed_model_number = model_number[:7]
 
-                # Print extracted data
+                # Print extracted data to console
                 print(f"Identifier: {identifier}")
                 print(f"Model Number: {model_number} (Trimmed: {trimmed_model_number})")
                 print(f"Destination Code: {destination_code}")
@@ -63,6 +68,13 @@ while True:
                 with open(csv_file, mode='a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow([identifier, model_number, trimmed_model_number, destination_code, serial_number])
+
+                # Draw a rectangle around the QR code
+                points = code.polygon
+                if len(points) == 4:
+                    pts = np.array(points, dtype=np.int32)
+                    pts = pts.reshape((-1, 1, 2))
+                    cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
 
                 # Display the decoded data on the image
                 x, y, w, h = code.rect
