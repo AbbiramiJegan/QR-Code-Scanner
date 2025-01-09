@@ -8,7 +8,7 @@ cap = cv2.VideoCapture(0)
 while True:
     # Read a frame from the webcam
     ret, frame = cap.read()
-    
+
     # Check if the frame was successfully read
     if not ret:
         print("Failed to grab frame")
@@ -30,10 +30,27 @@ while True:
             # Decode and print QR code data
             qr_data = code.data.decode('utf-8')
             print(f"QR Code Detected: {qr_data}")
-            
-            # Display the decoded data on the image
-            x, y, w, h = code.rect
-            cv2.putText(frame, qr_data, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+            # Split the QR code data into fields
+            fields = qr_data.split('|')
+            if len(fields) == 4:
+                identifier = fields[0]
+                model_number = fields[1]
+                destination_code = fields[2]
+                serial_number = fields[3]
+
+                # Trim the model number to the first 7 characters
+                trimmed_model_number = model_number[:7]
+
+                # Display the extracted data
+                print(f"Identifier: {identifier}")
+                print(f"Model Number: {model_number} (Trimmed: {trimmed_model_number})")
+                print(f"Destination Code: {destination_code}")
+                print(f"Serial Number: {serial_number}")
+
+                # Display the decoded data on the image
+                x, y, w, h = code.rect
+                cv2.putText(frame, f"Model: {trimmed_model_number}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     # Show the frame with QR codes highlighted
     cv2.imshow('QR Code Scanner', frame)
