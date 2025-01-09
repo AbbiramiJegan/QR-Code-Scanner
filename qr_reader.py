@@ -1,6 +1,17 @@
 import cv2
 import numpy as np
 from pyzbar.pyzbar import decode
+import csv
+import os
+
+# File path for the CSV file
+csv_file = 'qr_code_data.csv'
+
+# Check if the file already exists; if not, create it and write the header
+if not os.path.exists(csv_file):
+    with open(csv_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Identifier', 'Model Number', 'Trimmed Model Number', 'Destination Code', 'Serial Number'])
 
 # Initialize webcam
 cap = cv2.VideoCapture(0)
@@ -27,7 +38,7 @@ while True:
                 pts = pts.reshape((-1, 1, 2))
                 cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
 
-            # Decode and print QR code data
+            # Decode QR code data
             qr_data = code.data.decode('utf-8')
             print(f"QR Code Detected: {qr_data}")
 
@@ -42,11 +53,16 @@ while True:
                 # Trim the model number to the first 7 characters
                 trimmed_model_number = model_number[:7]
 
-                # Display the extracted data
+                # Print extracted data
                 print(f"Identifier: {identifier}")
                 print(f"Model Number: {model_number} (Trimmed: {trimmed_model_number})")
                 print(f"Destination Code: {destination_code}")
                 print(f"Serial Number: {serial_number}")
+
+                # Save the extracted data into the CSV file
+                with open(csv_file, mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([identifier, model_number, trimmed_model_number, destination_code, serial_number])
 
                 # Display the decoded data on the image
                 x, y, w, h = code.rect
