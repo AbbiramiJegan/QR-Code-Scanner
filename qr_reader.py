@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from pyzbar.pyzbar import decode
+from pyzbar.pyzbar import decode, ZBarSymbol
 import csv
 import os
 
@@ -19,21 +19,21 @@ processed_qr_codes = set()
 # Initialize webcam
 cap = cv2.VideoCapture(0)
 
-while True:
-    # Read a frame from the webcam
-    ret, frame = cap.read()
+try:
+    while True:
+        # Read a frame from the webcam
+        ret, frame = cap.read()
 
-    # Check if the frame was successfully read
-    if not ret:
-        print("Failed to grab frame")
-        break
+        # Check if the frame was successfully read
+        if not ret:
+            print("Failed to grab frame")
+            break
 
-    # Decode QR codes from the current frame
-    codes = decode(frame)
+        # Decode only QR codes from the current frame
+        codes = decode(frame, symbols=[ZBarSymbol.QRCODE])
 
-    # Loop through all detected codes
-    for code in codes:
-        if code.type == 'QRCODE':  # Check if it's a QR code
+        # Loop through all detected codes
+        for code in codes:
             # Decode QR code data
             qr_data = code.data.decode('utf-8').strip()
 
@@ -80,13 +80,17 @@ while True:
                 x, y, w, h = code.rect
                 cv2.putText(frame, f"Model: {trimmed_model_number}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
-    # Show the frame with QR codes highlighted
-    cv2.imshow('QR Code Scanner', frame)
+        # Show the frame with QR codes highlighted
+        cv2.imshow('QR Code Scanner', frame)
 
-    # Break the loop if the user presses 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        # Break the loop if the user presses 'q'
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-# Release the webcam and close the window
-cap.release()
-cv2.destroyAllWindows()
+except KeyboardInterrupt:
+    print("\nScanner stopped by user.")
+
+finally:
+    # Release the webcam and close the window
+    cap.release()
+    cv2.destroyAllWindows()
